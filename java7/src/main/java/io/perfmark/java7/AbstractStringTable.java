@@ -8,6 +8,7 @@ import java.util.Objects;
 abstract class AbstractStringTable implements ChannelEncoder.StringTable, Iterable<String> {
 
   private final int maxByteSize;
+  private final int maxSize;
   private int currentByteSize;
   private int head;
   private int size;
@@ -16,13 +17,20 @@ abstract class AbstractStringTable implements ChannelEncoder.StringTable, Iterab
   private final int[] lengthTable;
 
   AbstractStringTable(int maxByteSize) {
+    this(maxByteSize, maxByteSize / ChannelEncoder.STRING_OVERHEAD);
+  }
+
+  AbstractStringTable(int maxByteSize, int maxEntries) {
     if (maxByteSize < 0) {
       throw new IllegalArgumentException();
     }
+    if (maxEntries < 0) {
+      throw new IllegalArgumentException();
+    }
+    this.maxSize = Math.min(maxByteSize / ChannelEncoder.STRING_OVERHEAD, maxEntries);
     this.maxByteSize = maxByteSize;
-    int entryCount = maxByteSize / ChannelEncoder.STRING_OVERHEAD;
-    this.stringTable = new String[entryCount];
-    this.lengthTable = new int[entryCount];
+    this.stringTable = new String[maxSize];
+    this.lengthTable = new int[maxSize];
   }
 
   @Override
@@ -35,7 +43,7 @@ abstract class AbstractStringTable implements ChannelEncoder.StringTable, Iterab
     }
     final int entryLength = encodedLength + ChannelEncoder.STRING_OVERHEAD;
 
-    while (currentByteSize > maxByteSize - entryLength && size > 0) {
+    while ((currentByteSize > maxByteSize - entryLength || size == maxSize) && size > 0) {
       int tail = tail();
       String toRemove = stringTable[tail];
       stringTable[tail] = null;
@@ -47,7 +55,8 @@ abstract class AbstractStringTable implements ChannelEncoder.StringTable, Iterab
       // Update our state before calling into subclasses.
       valueRemove(toRemove);
     }
-    if (entryLength <= maxByteSize) {
+
+    if (entryLength <= maxByteSize && size < maxSize) {
       assert stringTable[head] == null;
       assert size < stringTable.length;
       currentByteSize += entryLength;
@@ -132,6 +141,19 @@ abstract class AbstractStringTable implements ChannelEncoder.StringTable, Iterab
 
   final int byteSize() {
     return currentByteSize;
+  }
+
+  final int maxSize() {
+    return maxSize;
+  }
+
+  final int maxByteSize() {
+    return maxByteSize;
+  }
+
+  // VisibleForTesting
+  final int tableSize() {
+    return stringTable.length;
   }
 
   private int tail() {

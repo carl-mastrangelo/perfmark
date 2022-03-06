@@ -50,7 +50,7 @@ public class StringTableTest {
           yield reuse.get(r.nextInt(reuse.size()));
         }
         case 2 -> {
-          int size = r.nextInt(maxByteSize * 2);
+          int size = r.nextInt(maxByteSize * 2 + 1);
           char[] data = new char[size];
           for (int k = 0; k < size; k++) {
             data[k] = (char) r.nextInt(Character.MAX_VALUE + 1);
