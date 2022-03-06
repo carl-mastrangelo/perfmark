@@ -38,7 +38,9 @@ final class StringTableEncoder extends AbstractStringTable {
     Objects.requireNonNull(value);
     Integer index = positions.get(value);
     if (index != null) {
-      return indexToPosition(index);
+      int pos = indexToPosition(index);
+      assert pos < size();
+      return pos;
     }
     return ABSENT;
   }
