@@ -26,9 +26,10 @@ public class StringTableTest {
 
   private void trial(int iterations, Random r) {
     List<String> reuse = new ArrayList<>();
-    int maxSize = r.nextInt(iterations / 1000);
-    StringTableEncoder enc = new StringTableEncoder(maxSize);
-    StringTableDecoder dec = new StringTableDecoder(maxSize);
+    int maxByteSize = r.nextInt(iterations / 1000);
+    int maxSize = r.nextInt(maxByteSize / STRING_OVERHEAD * 2 + 1);
+    StringTableEncoder enc = new StringTableEncoder(maxByteSize, maxSize);
+    StringTableDecoder dec = new StringTableDecoder(maxByteSize, maxSize);
     List<String> encSequence = new ArrayList<>();
     List<String> decSequence = new ArrayList<>();
     int found = 0;
@@ -49,7 +50,7 @@ public class StringTableTest {
           yield reuse.get(r.nextInt(reuse.size()));
         }
         case 2 -> {
-          int size = r.nextInt(maxSize * 2);
+          int size = r.nextInt(maxByteSize * 2);
           char[] data = new char[size];
           for (int k = 0; k < size; k++) {
             data[k] = (char) r.nextInt(Character.MAX_VALUE + 1);

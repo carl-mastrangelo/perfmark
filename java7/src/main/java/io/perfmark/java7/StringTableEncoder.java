@@ -14,6 +14,10 @@ final class StringTableEncoder extends AbstractStringTable {
     super(maxByteSize);
   }
 
+  StringTableEncoder(int maxByteSize, int maxEntries) {
+    super(maxByteSize, maxEntries);
+  }
+
   @Override
   protected void valueAdded(String value, int index) {
     // If duplicate values are put in, the later ones become inaccessible.  Ideally, the caller should check if
