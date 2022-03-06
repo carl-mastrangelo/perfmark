@@ -21,12 +21,12 @@ public class StringTableTest {
     Random srand = new Random();
     long seed = srand.nextLong();
     System.out.println("Seed "+ seed);
-    trial(4000, new Random(-3788030927773439961L));
+    trial(100000, new Random(seed));
   }
 
   private void trial(int iterations, Random r) {
     List<String> reuse = new ArrayList<>();
-    int maxSize = r.nextInt(iterations / 10);
+    int maxSize = r.nextInt(iterations / 1000);
     StringTableEncoder enc = new StringTableEncoder(maxSize);
     StringTableDecoder dec = new StringTableDecoder(maxSize);
     List<String> encSequence = new ArrayList<>();
@@ -54,6 +54,7 @@ public class StringTableTest {
           for (int k = 0; k < size; k++) {
             data[k] = (char) r.nextInt(Character.MAX_VALUE + 1);
           }
+          reuse.add(new String(data));
           yield new String(data);
         }
         case 3 -> {
@@ -62,6 +63,7 @@ public class StringTableTest {
           for (int k = 0; k < size; k++) {
             data[k] = (char) r.nextInt(Character.MAX_VALUE + 1);
           }
+          reuse.add(new String(data));
           yield new String(data);
         }
         default -> throw new AssertionError();
