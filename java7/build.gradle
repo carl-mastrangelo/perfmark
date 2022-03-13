@@ -16,16 +16,18 @@ sourceSets {
 
 
 compileJmhJava {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     javaCompiler = javaToolchains.compilerFor({
-        languageVersion = JavaLanguageVersion.of("11")
+        languageVersion = JavaLanguageVersion.of("17")
     })
 }
 
 dependencies {
     implementation project(':perfmark-impl')
     compileOnly libs.jsr305
+    testImplementation(project(":perfmark-api"))
+    testImplementation(project(':perfmark-testing'))
 
     jmhImplementation project(':perfmark-api'),
             project(':perfmark-impl'),
@@ -52,7 +54,7 @@ tasks.register('jmh', Test) {
     classpath = sourceSets.jmh.runtimeClasspath
 
     javaLauncher = javaToolchains.launcherFor({
-        languageVersion = JavaLanguageVersion.of("16")
+        languageVersion = JavaLanguageVersion.of("17")
     })
     //shouldRunAfter test
 }

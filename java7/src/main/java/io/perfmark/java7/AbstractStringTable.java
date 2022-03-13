@@ -5,6 +5,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+/**
+ * Base class for string table management.
+ */
 abstract class AbstractStringTable implements ChannelEncoder.StringTable, Iterable<String> {
 
   private final int maxByteSize;
@@ -58,7 +61,6 @@ abstract class AbstractStringTable implements ChannelEncoder.StringTable, Iterab
 
     if (entryLength <= maxByteSize && size < maxSize) {
       assert stringTable[head] == null;
-      assert size < stringTable.length;
       currentByteSize += entryLength;
       stringTable[head] = value;
       lengthTable[head] = entryLength;
@@ -72,6 +74,9 @@ abstract class AbstractStringTable implements ChannelEncoder.StringTable, Iterab
   }
 
   final String get(int position) {
+    if (position < 0) {
+      throw new IndexOutOfBoundsException();
+    }
     if (position >= size()) {
       throw new IndexOutOfBoundsException();
     }
@@ -84,11 +89,11 @@ abstract class AbstractStringTable implements ChannelEncoder.StringTable, Iterab
   }
 
   protected void valueRemove(String value) {
-    // Don't call this from a child class.
+    // Don't call this from a child class. For Override Only.
   }
 
   protected void valueAdded(String value, int index) {
-    // Don't call this from a child class.
+    // Don't call this from a child class. For Override Only.
   }
 
   protected final int indexToPosition(int index) {

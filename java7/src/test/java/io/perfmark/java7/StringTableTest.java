@@ -3,10 +3,14 @@ package io.perfmark.java7;
 import static io.perfmark.java7.ChannelEncoder.STRING_OVERHEAD;
 import static org.junit.Assert.assertEquals;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.SplittableRandom;
 import java.util.UUID;
+import java.util.random.RandomGenerator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -138,5 +142,50 @@ public class StringTableTest {
 
     assertEquals(0, table.size());
     assertEquals(0, table.byteSize());
+  }
+
+  @Test
+  public void arith() {
+
+    System.out.println(BigInteger.probablePrime(1024, new SecureRandom()).multiply(BigInteger.probablePrime(1024, new SecureRandom()) ));
+    var symbolCount = 30;
+    var rng = new SplittableRandom(1);
+    // 80   A
+    // 15   B
+    // 5    C
+    // 204.8
+    List<String> symbols = new ArrayList<>(symbolCount);
+    for (int i = 0; i < symbolCount; i++) {
+      var num = rng.nextDouble();
+      if (num < .8) {
+        symbols.add("A");
+      } else if (num < .95) {
+        symbols.add("B");
+      } else {
+        symbols.add("C");
+      }
+    }
+    record Range(int lowinc, int highex) {}
+    List<Range> ranges = List.of(new Range(0, 204), new Range(204, 243), new Range(243, 256));
+
+    for (String sym : symbols) {
+      // .0000 0000 A
+      // .1100 1100 B
+      // .1111 0011 C
+      // .1111 1111 11111111111111
+
+      // .0 A
+      // .1100 1011 A
+      // .110 B
+      // .1111 0010 B
+      // .1111 0011 C
+
+
+
+    }
+
+
+
+
   }
 }

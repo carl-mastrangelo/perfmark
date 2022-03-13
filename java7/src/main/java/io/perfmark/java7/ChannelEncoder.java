@@ -6,41 +6,32 @@ import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.CharBuffer;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
-import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
-public class ChannelEncoder implements Closeable {
+public final class ChannelEncoder implements Closeable {
 
   static final int STRING_OVERHEAD = 32;
 
   private static final int INDEXED_STRING = 0x80000000;
   private static final int NEW_INDEXED_STRING = 0x04000000;
 
-  private final StringTableEncoder taskTable = new StringTableEncoder(32 << 20);
+  private final StringTableEncoder taskTable = new StringTableEncoder(32 << 20, (1<<16) - (1<<14));
 
   private final WritableByteChannel chan;
   private ByteBuffer buffer;
-  private final CharsetEncoder encoder =
-      StandardCharsets.UTF_8.newEncoder()
-          .onMalformedInput(CodingErrorAction.REPLACE)
-          .onUnmappableCharacter(CodingErrorAction.REPLACE);
 
   public ChannelEncoder() throws IOException  {
     chan = new FileOutputStream("/tmp/strout").getChannel();
-    buffer = ByteBuffer.allocateDirect(1048576);
+    buffer = ByteBuffer.allocateDirect(1);
     buffer.order(ByteOrder.BIG_ENDIAN);
   }
-
 
   public static void main(String [] args) throws IOException {
     try (ChannelEncoder enc = new ChannelEncoder()) {
       long start = System.nanoTime();
-      for (int i = 0; i < 1000000000; i++) {
-        enc.writeStartTask(System.currentTimeMillis(), "running", "something" + (i & 0xF), i);
+      for (int i = 0; i < 100000000; i++) {
+        enc.writeStartTask(System.currentTimeMillis(), "running", "something00000" + i, i);
       }
       long stop = System.nanoTime();
       System.out.println(stop - start);
@@ -100,7 +91,7 @@ public class ChannelEncoder implements Closeable {
         return;
       } catch (BufferOverflowException e) {
         if (readable == 0) {
-          buffer = ByteBuffer.allocateDirect(buffer.capacity() + (buffer.capacity() >> 1));
+          buffer = ByteBuffer.allocateDirect(buffer.capacity() + (buffer.capacity() >> 1) + 1);
         } else {
           quietFlush();
         }
@@ -108,11 +99,13 @@ public class ChannelEncoder implements Closeable {
     }
   }
 
+
+
   private void writeStartTask0(long timeStamp, String taskName, String tagId0, long tagId1) {
     buffer.putShort((short) 1);
     buffer.putLong(timeStamp);
-    int taskNameSize = putString(taskTable, taskName);
-    int tagSize = putString(taskTable, tagId0);
+    int taskNameSize = 0;// putString(taskTable, taskName);
+    int tagSize = 0;//putString(taskTable, tagId0);
     buffer.putLong(tagId1);
     if (taskNameSize >= 0) {
       taskTable.add(taskName, taskNameSize);
@@ -122,32 +115,36 @@ public class ChannelEncoder implements Closeable {
     }
   }
 
+  private static final int SHORT_STRING_NEW_BITS = 14;
+  private static final int SHORT_STRING_NEW_SIZE_MAX = (1 << SHORT_STRING_NEW_BITS) - 1;
+  private static final int SHORT_STRING_BITS = 16;
+  private static final int SHORT_STRING_INDEX_MAX = (1 << SHORT_STRING_BITS) - (SHORT_STRING_NEW_SIZE_MAX + 1);
+
   // returns the new index string size, or else -1;
-  private int putString(StringTableEncoder table, String value) {
+  /*
+  @SuppressWarnings("UnusedMethod")
+  private int putShortString(StringTableEncoder table, String value) {
+    assert table.maxSize() <= SHORT_STRING_INDEX_MAX;
+
     int pos = table.get(value);
     int size = -1;
     if (pos < 0) {
-      int bufPos = buffer.position();
-      buffer.putInt(0);
-      CharBuffer cbuf = CharBuffer.wrap(value);
-      CoderResult res = encoder.encode(cbuf, buffer, true);
-      if (res.isError()) {
-        // the encoder is setup to be forgiving, so this shouldn't happen.
-        throw new RuntimeException(res.toString());
+      byte[] b = value.getBytes(StandardCharsets.UTF_8);
+      size = b.length;
+      if (size > SHORT_STRING_NEW_SIZE_MAX) {
+
       }
-      if (res.isOverflow()) {
-        throw new BufferOverflowException();
-      }
-      int newBufPos = buffer.position();
-      size = newBufPos - bufPos - 4;
+      buffer.putInt(NEW_INDEXED_STRING | size);
+      buffer.put(b, 0, b.length);
       // TODO(carl-mastrangelo): check size doesn't overflow
-      buffer.putInt(bufPos, NEW_INDEXED_STRING | size);
     } else {
       // TODO(carl-mastrangelo): check pos doesn't overflow
       buffer.putInt(INDEXED_STRING | pos);
     }
     return size;
   }
+
+   */
 
   interface StringTable {
     void add(String value, int encodedLength);
