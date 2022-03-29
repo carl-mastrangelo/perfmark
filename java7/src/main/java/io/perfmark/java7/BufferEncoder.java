@@ -4,6 +4,11 @@ import static io.perfmark.java7.BufferDecoder.OP_NEW_GEN;
 import static io.perfmark.java7.BufferDecoder.OP_PERF_MARK_HEADER_START0;
 import static io.perfmark.java7.BufferDecoder.OP_PERF_MARK_HEADER_START1;
 import static io.perfmark.java7.BufferDecoder.OP_PERF_MARK_HEADER_VERSION_V1;
+import static io.perfmark.java7.BufferDecoder.OP_START_TASK_S1N1;
+import static io.perfmark.java7.BufferDecoder.TABLE0_NEWSTRING_MAXSIZE;
+import static io.perfmark.java7.BufferDecoder.TABLE0_POS_OFFSET;
+import static io.perfmark.java7.BufferDecoder.TABLE1_NEWSTRING_MAXSIZE;
+import static io.perfmark.java7.BufferDecoder.TABLE1_POS_OFFSET;
 
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
@@ -29,25 +34,15 @@ final class BufferEncoder extends MarkHolder {
 
 
 
-  private static final int TABLE0_NEWSTRING_MAXSIZE_BITS = 13;
-  private static final int TABLE0_NEWSTRING_MAXSIZE = (1 << TABLE0_NEWSTRING_MAXSIZE_BITS) - 1;
-  private static final int TABLE0_POS_OFFSET = (1 << (TABLE0_NEWSTRING_MAXSIZE_BITS + 1));
+
   private static final int TABLE0_SIZE = Character.MAX_VALUE + 1 - TABLE0_POS_OFFSET;
   private static final int TABLE0_BYTE_SIZE = TABLE0_SIZE * (ChannelEncoder.STRING_OVERHEAD + 128);
 
-  private static final int TABLE1_NEWSTRING_MAXSIZE_BITS = 13;
-  private static final int TABLE1_NEWSTRING_MAXSIZE = (1 << TABLE1_NEWSTRING_MAXSIZE_BITS) - 1;
-  private static final int TABLE1_POS_OFFSET = (1 << (TABLE1_NEWSTRING_MAXSIZE_BITS + 1));
   private static final int TABLE1_SIZE = 1024;
   private static final int TABLE1_BYTE_SIZE = TABLE1_SIZE * (ChannelEncoder.STRING_OVERHEAD + 128);
 
   static {
-    assert TABLE0_NEWSTRING_MAXSIZE == 8191;
-    assert TABLE0_POS_OFFSET == 16384;
     assert TABLE0_SIZE == 49152;
-
-    assert TABLE1_NEWSTRING_MAXSIZE == 8191;
-    assert TABLE1_POS_OFFSET == 16384;
   }
 
   private final StringTableEncoder table0;
