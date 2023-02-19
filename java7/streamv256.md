@@ -94,6 +94,67 @@ operation.
 ### Set Generation
 * OP `0x0001`
 * Static Size: 8
+* Long - Generation number
 
 Sets the generation number of subsequent marks.  Note that this may 
 occasionally go backwards due to synchronization races in the process.
+
+### Set Mark Recorder
+* OP `0x0004`
+* Static Size: 8
+* Long - The Mark Recorder ID
+
+Sets the mark recorder ID of subsequent marks.
+
+### Define Mark Recorder
+* OP `0x0005`
+* Static Size: 26 = 8 + 8 + 8 + 2
+* Long - the Mark Recorder ID
+* Long - Relative Elapsed Nanoseconds from Epoch
+* Long - the Thread ID.  Note: Thread IDs may be reused, this should not be 
+    relied upon for uniqueness
+* String - The name of the Thread (TABLE0)
+
+### Start Task
+* OP `0x0002`
+* Static Size: 8 + 2 + 2
+* Long - Relative Elapsed Nanoseconds from Epoch
+* String - The Task Name (TABLE0)
+* String - The Subtask Name - For starts with no subtask name, this will be the 
+    empty string (TABLE0)
+
+### Stop Task
+* OP `0x0003`
+* Static Size: 8 + 2 + 2
+* Long - Relative Elapsed Nanoseconds from Epoch
+* String - The Task Name - For Stops with no task name, this will be the empty 
+    string (TABLE0)
+* String - The Subtask Name - For stops with no subtask name, this will be the
+    empty string (TABLE0)
+
+
+### Attach String Tag
+* OP `0x0006`
+* Static Size: 4 = 2 + 2
+* String - The name of the tag (TABLE0)
+* String - The value of the tag. (TABLE1)
+
+### Attach Long Tag
+* OP `0x0007`
+* Static Size: 10 = 2 + 8
+* String - The name of the tag (TABLE0)
+* Long - The value of the tag.
+
+### Attach Long Long Tag
+* OP `0x0008`
+* Static Size: 18 = 2 + 8 + 8
+* String - The name of the tag (TABLE0)
+* Long - The first value of the tag.
+* Long - The second value of the tag.
+
+### Link
+OP `0x0009`
+* Static Size: 16 = 8 + 8
+* Long - The first value of the link.  If positive, indicates this is an
+    outbound link.  If negative, indicates an inbound link
+* Long - The second value of the link.

@@ -13,6 +13,7 @@ import static io.perfmark.java7.BufferDecoder.TABLE1_POS_OFFSET;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.Storage;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -22,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
-final class BufferEncoder extends MarkHolder {
+final class BufferEncoder extends MarkRecorder {
 
   public static final int MIN_BUFFER_SIZE = 131072;
 
@@ -197,15 +198,6 @@ final class BufferEncoder extends MarkHolder {
 
   @Override
   public void attachKeyedTag(long gen, String name, long value0, long value1) {
-  }
-
-  @Override
-  public void resetForTest() {
-  }
-
-  @Override
-  public List<Mark> read(boolean concurrentWrites) {
-    return Collections.emptyList();
   }
 
   private boolean maybeFlush(long neededSize) {
