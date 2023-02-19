@@ -76,7 +76,7 @@ public class PerfMarkMethodRewriterTest {
   @Test
   public void rewriteClass_task() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.resetForTest();
+    Storage.resetForThread();
     String expectedValue =
         new StackTraceElement("loadername", "modulename", "moduleversion", "classname", "methodname", "filename", -1)
             .toString();
@@ -109,7 +109,7 @@ public class PerfMarkMethodRewriterTest {
   @Test
   public void rewriteClass_closeable() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.resetForTest();
+    Storage.resetForThread();
     String expectedValue =
         new StackTraceElement("loadername", "modulename", "moduleversion", "classname", "methodname", "filename", -1)
             .toString();
@@ -139,6 +139,7 @@ public class PerfMarkMethodRewriterTest {
     Truth.assertThat(start).isNotEqualTo(end);
   }
 
+  @SuppressWarnings("UnusedMethod")
   private static final class ClzToRewrite {
     public static void task() {
       // These two calls MUST happen on separate lines to ensure line reading works.

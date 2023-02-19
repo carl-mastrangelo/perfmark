@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google LLC
+ * Copyright 2023 Carl Mastrangelo
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package io.perfmark;
+package io.perfmark.impl;
 
-/** Tag is a dynamic, runtime created identifier (such as an RPC id). */
-public final class Tag {
-  final String tagName;
-  final long tagId;
+/**
+ * A local MarkRecorder is a class that gets the "current" MarkRecorder based on context.  For example, a thread local
+ * MarkRecorder could use this class to pull the local MarkRecorder from a threadlocal variable.  Other
+ * implementations are possible as well.
+ */
+public interface LocalMarkRecorder {
+  /**
+   * Gets or creates a MarkHolder.
+   * @return a non {@code null} MarkRecorder.
+   */
+  MarkRecorder get();
 
-  Tag(String tagName, long tagId) {
-    // tagName should be non-null, but checking is expensive
-    this.tagName = tagName;
-    this.tagId = tagId;
-  }
+  /**
+   * Removes the local Mark Holder
+   */
+  void remove();
 }

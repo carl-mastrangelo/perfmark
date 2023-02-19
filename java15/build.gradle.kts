@@ -1,7 +1,8 @@
 import net.ltgt.gradle.errorprone.errorprone
 
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-    id("io.github.reyerizo.gradle.jcstress")
+    alias(libs.plugins.jcstress)
 }
 
 buildscript {
@@ -67,6 +68,12 @@ jcstress {
     // mode "tough"
     deoptRatio = "2"
 }
+
+
+tasks.named<JavaCompile>("compileJmhJava") {
+    options.errorprone.excludedPaths.set(".*/build/generated/sources/annotationProcessor/.*")
+}
+
 
 tasks.named<JavaCompile>("compileJcstressJava") {
     options.errorprone.excludedPaths.set(".*/build/generated/sources/annotationProcessor/.*")

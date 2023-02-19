@@ -29,6 +29,9 @@ import javax.annotation.Nullable;
 final class SecretPerfMarkImpl {
 
   public static final class PerfMarkImpl extends Impl {
+    private static final int ENABLED_BIT_SPACE = 2;
+    private static final int GEN_TIMESTAMP_SPACE = 54;
+    private static final long MAX_MIBROS = (1L << GEN_TIMESTAMP_SPACE) - 1;
     private static final Tag NO_TAG = packTag(Mark.NO_TAG_NAME, Mark.NO_TAG_ID);
     private static final Link NO_LINK = packLink(Mark.NO_LINK_ID);
     private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
@@ -39,19 +42,24 @@ final class SecretPerfMarkImpl {
     // May be null if debugging is disabled.
     private static final Object logger;
 
+    /**
+     * This is the generation of the recorded tasks.  The bottom 8 bits [0-7] are reserved for opcode packing.
+     * Bit 9 [8] is used for detecting if PerfMark is enabled or not.  Bit 10 [9] is unused.  Bits 11-64 [10-647]
+     * are used for storing the time since Perfmark Was last / enabled or disabled.  The units are in nanoseconds/1024,
+     * or (inaccurately) called mibros (like micros, but power of 2 based).
+     */
     private static long actualGeneration;
 
     static {
+      assert ENABLED_BIT_SPACE + Generator.GEN_OFFSET + GEN_TIMESTAMP_SPACE <= 64;
       Generator gen = null;
       Throwable[] problems = new Throwable[4];
       // Avoid using a for-loop for this code, as it makes it easier for tools like Proguard to rewrite.
-      if (gen == null) {
-        try {
-          Class<?> clz = Class.forName("io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator");
-          gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
-        } catch (Throwable t) {
-          problems[0] = t;
-        }
+      try {
+        Class<?> clz = Class.forName("io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator");
+        gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
+      } catch (Throwable t) {
+        problems[0] = t;
       }
       if (gen == null) {
         try {
@@ -79,7 +87,7 @@ final class SecretPerfMarkImpl {
       boolean startEnabledSuccess = false;
       try {
         if ((startEnabled = Boolean.getBoolean("io.perfmark.PerfMark.startEnabled"))) {
-          startEnabledSuccess = setEnabledQuiet(startEnabled);
+          startEnabledSuccess = setEnabledQuiet(startEnabled, Generator.INIT_NANO_TIME);
         }
       } catch (Throwable t) {
         problems[3] = t;
@@ -111,7 +119,15 @@ final class SecretPerfMarkImpl {
 
     @Override
     protected synchronized void setEnabled(boolean value) {
-      logEnabledChange(value, setEnabledQuiet(value));
+      boolean changed = setEnabledQuiet(value, System.nanoTime());
+      logEnabledChange(value, changed);
+    }
+
+    @Override
+    protected synchronized boolean setEnabled(boolean value, boolean overload) {
+      boolean changed = setEnabledQuiet(value, System.nanoTime());
+      logEnabledChange(value, changed);
+      return changed;
     }
 
     private static synchronized void logEnabledChange(boolean value, boolean success) {
@@ -124,15 +140,50 @@ final class SecretPerfMarkImpl {
     }
 
     /** Returns true if successfully changed. */
-    private static synchronized boolean setEnabledQuiet(boolean value) {
+    private static synchronized boolean setEnabledQuiet(boolean value, long now) {
       if (isEnabled(actualGeneration) == value) {
         return false;
       }
       if (actualGeneration == Generator.FAILURE) {
         return false;
       }
-      generator.setGeneration(actualGeneration += INCREMENT);
+      long nanoDiff = now - Generator.INIT_NANO_TIME;
+      generator.setGeneration(actualGeneration = nextGeneration(actualGeneration, nanoDiff));
       return true;
+    }
+
+    // VisibleForTesting
+    static long nextGeneration(final long currentGeneration, final long nanosSinceInit) {
+      assert currentGeneration != Generator.FAILURE;
+      long currentMibros = mibrosFromGeneration(currentGeneration);
+      long mibrosSinceInit = Math.min(mibrosFromNanos(nanosSinceInit), MAX_MIBROS); // 54bits
+      boolean nextEnabled = !isEnabled(currentGeneration);
+      long nextMibros;
+      if (mibrosSinceInit > currentMibros) {
+        nextMibros = mibrosSinceInit;
+      } else {
+        nextMibros = currentMibros + (nextEnabled ? 1 : 0);
+      }
+      if (nextMibros > MAX_MIBROS || nextMibros < 0) {
+        return Generator.FAILURE;
+      }
+      long enabledMask = nextEnabled ? INCREMENT : 0;
+      long mibroMask = (nextMibros << (Generator.GEN_OFFSET + ENABLED_BIT_SPACE));
+      assert (enabledMask & mibroMask) == 0;
+      return mibroMask | enabledMask;
+    }
+
+    private static long mibrosFromGeneration(long currentGeneration) {
+      if (currentGeneration == Generator.FAILURE) {
+        throw new IllegalArgumentException();
+      }
+      return currentGeneration >>> (Generator.GEN_OFFSET + ENABLED_BIT_SPACE);
+    }
+
+    private static long mibrosFromNanos(long nanos) {
+      long remainder = ((1L<<(64 - GEN_TIMESTAMP_SPACE)) - 1) & nanos;
+      return (nanos >>> (64 - GEN_TIMESTAMP_SPACE))
+          + (remainder >= (1L<<(64 - GEN_TIMESTAMP_SPACE - 1)) ? 1 : 0);
     }
 
     @Override

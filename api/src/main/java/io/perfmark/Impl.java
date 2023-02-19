@@ -16,8 +16,6 @@
 
 package io.perfmark;
 
-import javax.annotation.Nullable;
-
 public class Impl {
   static final String NO_TAG_NAME = "";
   static final long NO_TAG_ID = Long.MIN_VALUE;
@@ -38,6 +36,10 @@ public class Impl {
   }
 
   protected void setEnabled(boolean value) {}
+
+  protected boolean setEnabled(boolean value, boolean overload) {
+    return false;
+  }
 
   protected <T> void startTask(T taskNameObject, StringFunction<? super T> taskNameFunc) {}
 
@@ -78,11 +80,10 @@ public class Impl {
   protected <T> void attachTag(
       String tagName, T tagObject, StringFunction<? super T> stringFunction) {}
 
-  protected Tag createTag(@Nullable String tagName, long tagId) {
+  protected Tag createTag(String tagName, long tagId) {
     return NO_TAG;
   }
 
-  @Nullable
   protected static String unpackTagName(Tag tag) {
     return tag.tagName;
   }
@@ -95,7 +96,7 @@ public class Impl {
     return link.linkId;
   }
 
-  protected static Tag packTag(@Nullable String tagName, long tagId) {
+  protected static Tag packTag(String tagName, long tagId) {
     return new Tag(tagName, tagId);
   }
 
