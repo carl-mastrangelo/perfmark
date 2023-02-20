@@ -16,6 +16,12 @@
 
 package io.perfmark.impl;
 
+/**
+ * Handles the {@link io.perfmark.PerfMark} calls.  All calls are executed on the same thread that created the
+ * MarkRecorder.
+ *
+ * @since 0.27.0
+ */
 public abstract class MarkRecorder {
 
   protected MarkRecorder() {}

@@ -21,19 +21,19 @@ import io.perfmark.impl.MarkRecorder;
 
 final class SynchronizedMarkRecorder extends MarkRecorder {
 
-  private static final long START_N1S1_OP = 1; // Mark.Operation.TASK_START_N1S1.ordinal();
-  private static final long START_N1S2_OP = 2; // Mark.Operation.TASK_START_N1S2.ordinal();
-  private static final long STOP_N1S0_OP = 3; // Mark.Operation.TASK_END_N1S0.ordinal();
-  private static final long STOP_N1S1_OP = 4; // Mark.Operation.TASK_END_N1S1.ordinal();
-  private static final long STOP_N1S2_OP = 5; // Mark.Operation.TASK_END_N1S2.ordinal();
-  private static final long EVENT_N1S1_OP = 6; // Mark.Operation.EVENT_N1S1.ordinal();
-  private static final long EVENT_N1S2_OP = 7; // Mark.Operation.EVENT_N1S2.ordinal();
-  private static final long EVENT_N2S2_OP = 8; // Mark.Operation.EVENT_N2S2.ordinal();
-  private static final long LINK_OP = 10; // Mark.Operation.LINK.ordinal();
-  private static final long TAG_N1S1_OP = 13; // Mark.Operation.TAG_N1S1.ordinal();
-  private static final long TAG_KEYED_N0S2_OP = 16; // Mark.Operation.TAG_KEYED_N0S2.ordinal();
-  private static final long TAG_KEYED_N1S1_OP = 14; // Mark.Operation.TAG_KEYED_N1S1.ordinal();
-  private static final long TAG_KEYED_N2S1_OP = 15; // Mark.Operation.TAG_KEYED_N2S1.ordinal();
+  private static final long START_N1S1_OP = 1;
+  private static final long START_N1S2_OP = 2;
+  private static final long STOP_N1S0_OP = 3;
+  private static final long STOP_N1S1_OP = 4;
+  private static final long STOP_N1S2_OP = 5;
+  private static final long EVENT_N1S1_OP = 6;
+  private static final long EVENT_N1S2_OP = 7;
+  private static final long EVENT_N2S2_OP = 8;
+  private static final long LINK_OP = 10;
+  private static final long TAG_N1S1_OP = 13;
+  private static final long TAG_KEYED_N0S2_OP = 16;
+  private static final long TAG_KEYED_N1S1_OP = 14;
+  private static final long TAG_KEYED_N2S1_OP = 15;
 
   static {
     assert START_N1S1_OP == Mark.Operation.TASK_START_N1S1.ordinal();

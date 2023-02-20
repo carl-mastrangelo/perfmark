@@ -5,9 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-public class MarkStreamer extends MarkRecorder {
-
-  private static final byte[] EMPTY = new byte[0];
+public final class MarkStreamer extends MarkRecorder {
 
   private final BufferProvider provider;
   private final long initNanos;
@@ -15,7 +13,8 @@ public class MarkStreamer extends MarkRecorder {
   private final StringTableEncoder table1;
 
   interface BufferProvider {
-    ByteBuffer allocateAndRelease(int size, ByteBuffer bufferToRelease);
+    ByteBuffer allocate(int size);
+    void flush(ByteBuffer bufferToRelease);
   }
 
   MarkStreamer(long initNanos, BufferProvider provider, StringTableEncoder table0, StringTableEncoder table1) {
@@ -34,11 +33,13 @@ public class MarkStreamer extends MarkRecorder {
   private static final char ATTACH_STRING_TAG_OP = 6;
   private static final char ATTACH_LONG_TAG_OP = 7;
   private static final char ATTACH_LONG_LONG_TAG_OP = 8;
+  private static final char LINK_OP = 9;
   private static final int START_TASK_STATIC = 2 + 8 + 2 + 2;
   private static final int STOP_TASK_STATIC = 2 + 8 + 2 + 2;
   private static final int ATTACH_STRING_TAG_STATIC = 2 + 2 + 2;
   private static final int ATTACH_LONG_TAG_STATIC = 2 + 2 + 8;
   private static final int ATTACH_LONG_LONG_TAG_STATIC = 2 + 2 + 8 + 8;
+  private static final int LINK_STATIC = 2 + 8 + 8;
 
   private static final int STRING_EMPTY_NOINDEX = STRING_NOINDEX_OFFSET;
 
@@ -48,29 +49,38 @@ public class MarkStreamer extends MarkRecorder {
     buf = startTask(buf, taskName, null, nanoTime);
     buf = writeTag(buf, null, tagName);
     buf = writeTag(buf, null, tagId);
+    provider.flush(buf);
   }
 
   @Override
   public void start(long gen, String taskName, long nanoTime) {
     ByteBuffer buf = null;
     startTask(buf, taskName, null, nanoTime);
+    provider.flush(buf);
   }
 
   @Override
   public void start(long gen, String taskName, String subTaskName, long nanoTime) {
     ByteBuffer buf = null;
     buf = startTask(buf, taskName, subTaskName, nanoTime);
+    provider.flush(buf);
   }
 
   @Override
   public void link(long gen, long linkId) {
-
+    ByteBuffer buf = null;
+    buf = alloc(buf, LINK_STATIC);
+    buf.putChar(LINK_OP);
+    buf.putLong(linkId);
+    buf.putLong(0);
+    provider.flush(buf);
   }
 
   @Override
   public void stop(long gen, long nanoTime) {
     ByteBuffer buf = null;
     buf = stopTask(buf, null, null, nanoTime);
+    provider.flush(buf);
   }
 
   @Override
@@ -79,18 +89,21 @@ public class MarkStreamer extends MarkRecorder {
     buf = writeTag(buf, null, tagName);
     buf = writeTag(buf, null, tagId);
     buf = stopTask(buf, null, null, nanoTime);
+    provider.flush(buf);
   }
 
   @Override
   public void stop(long gen, String taskName, long nanoTime) {
     ByteBuffer buf = null;
     buf = stopTask(buf, taskName, null, nanoTime);
+    provider.flush(buf);
   }
 
   @Override
   public void stop(long gen, String taskName, String subTaskName, long nanoTime) {
     ByteBuffer buf = null;
     buf = stopTask(buf, taskName, subTaskName, nanoTime);
+    provider.flush(buf);
   }
 
   @Override
@@ -99,19 +112,22 @@ public class MarkStreamer extends MarkRecorder {
     buf = startTask(buf, eventName, null, nanoTime);
     buf = writeTag(buf, null, tagName);
     buf = writeTag(buf, null, tagId);
-    stopTask(buf, null, null, nanoTime);
+    buf = stopTask(buf, null, null, nanoTime);
+    provider.flush(buf);
   }
 
   @Override
   public void event(long gen, String eventName, long nanoTime) {
     ByteBuffer buf = startTask(null, eventName, null, nanoTime);
-    stopTask(buf, null, null, nanoTime);
+    buf = stopTask(buf, null, null, nanoTime);
+    provider.flush(buf);
   }
 
   @Override
   public void event(long gen, String eventName, String subEventName, long nanoTime) {
     ByteBuffer buf = startTask(null, eventName, subEventName, nanoTime);
-    stopTask(buf, null, null, nanoTime);
+    buf = stopTask(buf, null, null, nanoTime);
+    provider.flush(buf);
   }
 
   @Override
@@ -119,18 +135,21 @@ public class MarkStreamer extends MarkRecorder {
     ByteBuffer buf = null;
     buf = writeTag(buf, null, tagName);
     buf = writeTag(buf, null, tagId);
+    provider.flush(buf);
   }
 
   @Override
   public void attachKeyedTag(long gen, String name, String value) {
     ByteBuffer buf = null;
     buf = writeTag(buf, name, value);
+    provider.flush(buf);
   }
 
   @Override
   public void attachKeyedTag(long gen, String name, long value0) {
     ByteBuffer buf = null;
     buf = writeTag(buf, name, value0);
+    provider.flush(buf);
   }
 
   @Override
@@ -145,6 +164,7 @@ public class MarkStreamer extends MarkRecorder {
     buf.putLong(value0);
     buf.putLong(value1);
     buf = writeStrings(idx, values, lengths, buf);
+    provider.flush(buf);
   }
 
   private ByteBuffer startTask(ByteBuffer buf, String taskName, String subTaskName, long nanoTime) {
@@ -211,7 +231,7 @@ public class MarkStreamer extends MarkRecorder {
     int[] lengths = new int[2];
     int idx = 0;
     idx = pushString(idx, values, lengths, buf, tagName, table0);
-    idx = pushString(idx, values, lengths, buf, tagValue, table0);
+    idx = pushString(idx, values, lengths, buf, tagValue, table1);
     return writeStrings(idx, values, lengths, buf);
   }
 
@@ -227,11 +247,17 @@ public class MarkStreamer extends MarkRecorder {
   }
 
   private ByteBuffer alloc(ByteBuffer previous, int size) {
-    if (previous != null && previous.remaining() >= size) {
-      return previous;
+    if (previous != null) {
+      if (previous.remaining() >= size) {
+        return previous;
+      } else {
+        provider.flush(previous);
+      }
     }
-    ByteBuffer ret = provider.allocateAndRelease(size, previous);
-    assert ret.order() == ByteOrder.LITTLE_ENDIAN;
+    ByteBuffer ret = provider.allocate(size);
+    if (ret.order() != ByteOrder.LITTLE_ENDIAN) {
+      ret.order(ByteOrder.LITTLE_ENDIAN);
+    }
     assert ret.remaining() >= size;
     return ret;
   }

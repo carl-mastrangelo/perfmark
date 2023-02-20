@@ -21,6 +21,8 @@ import java.util.List;
 
 /**
  * A MarkHolder records Marks for later retrieval.
+ *
+ * @since 0.15.0
  */
 public abstract class MarkHolder {
 
@@ -28,7 +30,6 @@ public abstract class MarkHolder {
 
   /**
    * Attempts to remove all Marks for the calling thread.
-   *
    */
   public void resetForThread() {
     // noop

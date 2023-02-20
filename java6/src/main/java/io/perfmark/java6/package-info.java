@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
-@javax.annotation.CheckReturnValue
-@javax.annotation.ParametersAreNonnullByDefault
+/**
+ * This package includes implementations of {@link io.perfmark.impl.Generator} and {@link io.perfmark.impl.MarkRecorder}
+ * that are compiled for Java 6.  These implementations allow running PerfMark on platforms where later Java features
+ * may not be available.  To use this package, add a runtime dependency to your project on this jar, and PerfMark will
+ * automatically attempt to use it.   If more modern implementations are available, PerfMark may attempt to use those
+ * instead.
+ */
 package io.perfmark.java6;
