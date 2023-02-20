@@ -17,6 +17,7 @@
 package io.perfmark;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.DoNotCall;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.lang.reflect.Method;
@@ -380,6 +381,7 @@ public final class PerfMark {
    * @since 0.17.0
    * @return A Link to be used in other tasks.
    */
+  @CheckReturnValue
   public static Link linkOut() {
     return impl.linkOut();
   }

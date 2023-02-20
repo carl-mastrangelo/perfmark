@@ -13,8 +13,8 @@ public final class ChannelEncoder implements Closeable {
 
   static final int STRING_OVERHEAD = 32;
 
-  private static final int INDEXED_STRING = 0x80000000;
-  private static final int NEW_INDEXED_STRING = 0x04000000;
+  private static final int INDEXED_STRING = 0x8000_0000;
+  private static final int NEW_INDEXED_STRING = 0x0400_0000;
 
   private final StringTableEncoder taskTable = new StringTableEncoder(32 << 20, (1<<16) - (1<<14));
 
