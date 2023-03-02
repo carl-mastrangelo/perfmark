@@ -49,7 +49,7 @@ final class ThreadRef extends WeakReference<Thread> {
     return threadInfo;
   }
 
-  ThreadRef identity() {
+  static ThreadRef identity() {
     return IDENTITY;
   }
 
